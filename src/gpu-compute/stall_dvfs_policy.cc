@@ -39,18 +39,14 @@ STALLDVFSPolicy::sample(DVFSHandler::PerfLevel currentLevel)
             .stallCycles[ScoreboardCheckStage::NRDY_WAIT_CNT]
             .value();
 
-        // Calculate scaling factor (The number of WFs that could be active
-        // in this CU).
-        const int maxActiveWFsPerCU = cu->numVectorALUs *
-            cu->activeWaves;
-
         // calculate deltas.
         uint64_t deltaCycles;
         uint64_t deltaMemStallCycles;
 
         // Detect Reset: If current is less than previous, stats were reset.
         // Delta is just the current value (assuming reset to 0).
-        if (currCycles < prevCyclesPerCU[i]) {
+        if (currCycles < prevCyclesPerCU[i] ||
+            currMemStallCycles) {
             deltaCycles = currCycles;
             deltaMemStallCycles = currMemStallCycles;
         } else {
@@ -60,7 +56,7 @@ STALLDVFSPolicy::sample(DVFSHandler::PerfLevel currentLevel)
 
         // Scale total cycles to be per-active-WF basis.
         uint64_t scaledDeltaCycles =
-            deltaCycles * maxActiveWFsPerCU;
+            deltaCycles * cu->activeWaves;
 
         // Aggregate stats.
         totalCycles += scaledDeltaCycles;
